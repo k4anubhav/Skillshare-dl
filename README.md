@@ -21,7 +21,7 @@ document.cookie
 
 3. Copy-paste cookie from developer console (without " if present) into cookie.txt.
 
-#### Install dependencies:
+### Install dependencies:
 ```
 pip install -r requirements.txt
 ```
@@ -30,7 +30,7 @@ or
 pip3 install -r requirements.txt
 ```
 
-#### Download Cources:
+### Download Cources:
 Run downloder.py
 ```
 python downloader.py
