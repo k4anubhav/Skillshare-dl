@@ -6,6 +6,13 @@ Video download is only available in the skillshare mobile apps and can't watch o
 ### Disclaimer
 This project is for educational purposes only. I am not responsible for any misuse of this piece of code.
 
+### Features
+
+It Download:
+- Lectures (.mp4)
+- Subtitles
+- Resources
+
 ### Support your content creators, do **NOT** use this for **Piracy**!
 
 You will need a skillshare premium account to access premium content.
