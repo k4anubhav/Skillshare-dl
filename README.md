@@ -9,9 +9,9 @@ This project is for educational purposes only. I am not responsible for any misu
 ### Features
 
 It Download:
-- Lectures (.mp4)
-- Subtitles
-- Resources
+- **Lectures**
+- **Subtitles**
+- **Resources**
 
 ### Support your content creators, do **NOT** use this for **Piracy**!
 

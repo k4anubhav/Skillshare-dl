@@ -15,14 +15,16 @@ class Skillshare(object):
         # self.download_path = download_path
         self.pk = pk.strip()
         self.brightcove_account_id = brightcove_account_id
-        self.pythonversion = 3 if sys.version_info >= (3, 0) else 2
+        self.classId = None
+        self.temp_base_path = None
+        self.pythonVersion = 3 if sys.version_info >= (3, 0) else 2
+        print('@K4ANUBHAV (。_。)')  # Don't remove this Tag ^_~
 
     # just remove the characters which can't be used in windows file name
     def is_unicode_string(self, string):
-        if (self.pythonversion == 3 and isinstance(string, str)) or (
-                self.pythonversion == 2 and isinstance(string, unicode)):
+        if (self.pythonVersion == 3 and isinstance(string, str)) or (
+                self.pythonVersion == 2 and isinstance(string, unicode)):
             return True
-
         else:
             return False
 
@@ -35,9 +37,8 @@ class Skillshare(object):
 
         self.download_course_by_class_id(class_id, boolSubtitle, boolResources)
 
-    # check is the course link is right
+    # covert course link to course id
     def course_is_url_to_id(self, url):
-
         m = re.match('.*skillshare.com/classes/.*?/(\\d+)', url)
         self.classId = m.group(1)
         return m.group(1)
@@ -55,7 +56,6 @@ class Skillshare(object):
             teacher_name = data['_embedded']['teacher']['full_name']
 
         if not teacher_name:
-            # self.setDetailLabel('Failed to read teacher name from data')
             print("")
 
         if self.is_unicode_string(teacher_name):
@@ -64,13 +64,11 @@ class Skillshare(object):
         # class title
         title = data['title']
 
-        # ui class name change to class title
         print("ClassName : " + title)
-
         if self.is_unicode_string(title):
             title = title.encode('ascii', 'replace')
 
-            # download base path
+        # download base path
         download_path = os.getcwd()
         self.base_path = os.path.abspath(
             os.path.join(
@@ -120,7 +118,7 @@ class Skillshare(object):
                     self.download_video(
                         fpath='{base_path}/{session}.mp4'.format(base_path=self.base_path, session=file_name),
                         video_id=video_id,
-                        tpath='{t_path}/{session}.mp4'.format(t_path=temp_base_path, session=file_name),
+                        tPath='{t_path}/{session}.mp4'.format(t_path=temp_base_path, session=file_name),
                         boolSubtitle=boolSubtitle
                     )
 
@@ -132,36 +130,30 @@ class Skillshare(object):
             print("")
         return ''
 
-    # download subtitle
-    def subtitleDownload(self, meta_res, fpath, tpath):
+    # download subtitle, It takes the path of video file and change the extension itself
+    # TODO: add language selector
+    def subtitleDownload(self, meta_res, fpath, tPath):
         subPath = fpath.replace(".mp4", ".vtt")
-
-        subTPath = tpath.replace(".mp4", ".vtt")
-
-        if os.path.exists(subPath):
-            # self.setDetailLabel('Downloading {}...'.format(subPath) + '\nAlready Downloaded Skipping')
-            return 0
+        subTPath = tPath.replace(".mp4", ".vtt")
         try:
             for x in meta_res.json()['text_tracks']:
                 sub_url = x['src']
+                self.downloadToStorage(sub_url, subPath, subTPath)
                 break
+        except Exception as e:
+            print(e)
+            print('Error on subtitle download, Maybe there is no subs in video lecture')
 
-            # self.setDetailLabel('Downloading sub {}...'.format(subPath))
-            self.downloadToStorage(sub_url, subPath, subTPath)
-
-        except:
-            print('error on subtitle download')
-
-    # This actually download files
-    def downloadToStorage(self, url, path, tpath):
+    # This actually download files to local storage, by first downloading to temp folder then cut/paste to real location
+    def downloadToStorage(self, url, path, tPath):
         if os.path.exists(path):
-            print('Downloading {}...'.format(path) + '\n Already Downloaded Skipping')
+            print('Already Downloaded Skipping, {}'.format(path))
             return 0
 
-        with open(tpath, 'wb') as (f):
+        with open(tPath, 'wb') as (f):
             response = requests.get(url, allow_redirects=True, stream=True)
             total_length = response.headers.get('content-length')
-            file_size = 'File Size : ' + str(round(int(total_length)/1e+6)) + ' mb'
+            file_size = 'File Size : ' + str(round(int(total_length) / 1e+6)) + ' mb'
 
             if not total_length:
                 f.write(response.content)
@@ -177,7 +169,7 @@ class Skillshare(object):
                     sys.stdout.write("\r[%s%s] %s" % ('=' * done, ' ' * (100 - done), file_size))
                     sys.stdout.flush()
         print('\n')
-        shutil.move(tpath, path)
+        shutil.move(tPath, path)
 
     def downloadResources(self, boolResources):
         if boolResources:
@@ -204,7 +196,9 @@ class Skillshare(object):
                 'cookie': self.cookie,
             }
 
-            response = requests.get('https://www.skillshare.com/classes/Animate-Your-Illustrations-with-After-Effects/{}/projects'.format(self.classId), headers=headers)
+            response = requests.get(
+                'https://www.skillshare.com/classes/Animate-Your-Illustrations-with-After-Effects/{}/projects'.format(
+                    self.classId), headers=headers)
             data = response.text
             if data.__contains__('"hasAttachments":true'):
                 pattern = re.compile(r'attachments":\[{".+"}],"hasA')
@@ -223,15 +217,14 @@ class Skillshare(object):
                                 data['title']
                             )
                         )
-
-                        tpath = os.path.abspath(
+                        tPath = os.path.abspath(
                             os.path.join(
                                 self.temp_base_path,
                                 data['title']
                             )
                         )
                         print(path, data['size'])
-                        self.downloadToStorage(data['url'], path, tpath)
+                        self.downloadToStorage(data['url'], path, tPath)
                 print('')
             else:
                 if data.__contains__('"hasAttachments":false'):
@@ -255,7 +248,7 @@ class Skillshare(object):
             return 'Fetch error, code == {}'.format(res.status_code)
         return res.json()
 
-    def download_video(self, fpath, video_id, tpath, boolSubtitle):
+    def download_video(self, fpath, video_id, tPath, boolSubtitle):
         meta_url = 'https://edge.api.brightcove.com/playback/v1/accounts/{account_id}/videos/{video_id}'.format(
             account_id=(self.brightcove_account_id),
             video_id=video_id,
@@ -279,9 +272,9 @@ class Skillshare(object):
             if 'container' in x:
                 if x['container'] == 'MP4' and 'src' in x:
                     dl_url = x['src']
-                    self.downloadToStorage(dl_url, fpath, tpath)
+                    self.downloadToStorage(dl_url, fpath, tPath)
                     break
 
         '''Subtitle download it takes same file path as .mp4 cause it auto replace the extension'''
         if boolSubtitle:
-            self.subtitleDownload(meta_res, fpath, tpath)
+            self.subtitleDownload(meta_res, fpath, tPath)
