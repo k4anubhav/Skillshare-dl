@@ -46,3 +46,6 @@ or
 ```
 python3 downloader.py
 ```
+
+##  Credits
+ - [kallqvist](https://github.com/kallqvist)
