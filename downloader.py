@@ -18,9 +18,10 @@ dl = Skillshare(cookie=cookie)
 url = input("Enter class url:: ")
 
 # bool for downloading subtitle
-boolSubtitle = yes_or_no("Do you want to download subtitle")
+boolSubtitle, all_subs = yes_or_no("Do you want to download subtitle"), yes_or_no(
+    "Do you want to download all subtitles")
 
 # bool for downloading resources
 boolResources = yes_or_no("Do you want to download resources")
 
-dl.download_course_by_url(url, boolSubtitle, boolResources)
+dl.download_course_by_url(url, boolSubtitle, all_subs, boolResources)

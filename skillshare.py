@@ -1,5 +1,10 @@
 import shutil
-import requests, json, sys, re, os
+
+import json
+import os
+import re
+import requests
+import sys
 from slugify import slugify
 
 
@@ -29,13 +34,13 @@ class Skillshare(object):
             return False
 
     # get class id from url and sends to download_course_by_class_id
-    def download_course_by_url(self, url, boolSubtitle, boolResources):
+    def download_course_by_url(self, url, boolSubtitle, all_subs, boolResources):
         class_id = self.course_is_url_to_id(url)
 
         if not class_id:
             raise Exception('Failed to parse class ID from URL')
 
-        self.download_course_by_class_id(class_id, boolSubtitle, boolResources)
+        self.download_course_by_class_id(class_id, boolSubtitle, all_subs, boolResources)
 
     # covert course link to course id
     def course_is_url_to_id(self, url):
@@ -44,7 +49,7 @@ class Skillshare(object):
         return m.group(1)
 
     # download course by giving id
-    def download_course_by_class_id(self, class_id, boolSubtitle, boolResources):
+    def download_course_by_class_id(self, class_id, boolSubtitle, all_subs, boolResources):
         data = self.fetch_course_data_by_class_id(class_id=class_id)
         teacher_name = None
 
@@ -119,7 +124,8 @@ class Skillshare(object):
                         fpath='{base_path}/{session}.mp4'.format(base_path=self.base_path, session=file_name),
                         video_id=video_id,
                         tPath='{t_path}/{session}.mp4'.format(t_path=temp_base_path, session=file_name),
-                        boolSubtitle=boolSubtitle
+                        boolSubtitle=boolSubtitle,
+                        all_subs=all_subs
                     )
 
         self.downloadResources(boolResources)
@@ -132,14 +138,17 @@ class Skillshare(object):
 
     # download subtitle, It takes the path of video file and change the extension itself
     # TODO: add language selector
-    def subtitleDownload(self, meta_res, fpath, tPath):
-        subPath = fpath.replace(".mp4", ".vtt")
-        subTPath = tPath.replace(".mp4", ".vtt")
+    def subtitleDownload(self, meta_res, fpath, tPath, all_subs):
         try:
+            i = 0
             for x in meta_res.json()['text_tracks']:
                 sub_url = x['src']
+                subPath = fpath.replace('.mp4', '_' + str(i) + '.vtt')
+                subTPath = tPath.replace('.mp4', '_' + str(i) + '.vtt')
+                i += 1
                 self.downloadToStorage(sub_url, subPath, subTPath)
-                break
+                if not all_subs:
+                    break
         except Exception as e:
             print(e)
             print('Error on subtitle download, Maybe there is no subs in video lecture')
@@ -248,7 +257,7 @@ class Skillshare(object):
             return 'Fetch error, code == {}'.format(res.status_code)
         return res.json()
 
-    def download_video(self, fpath, video_id, tPath, boolSubtitle):
+    def download_video(self, fpath, video_id, tPath, boolSubtitle, all_subs):
         meta_url = 'https://edge.api.brightcove.com/playback/v1/accounts/{account_id}/videos/{video_id}'.format(
             account_id=(self.brightcove_account_id),
             video_id=video_id,
@@ -277,4 +286,4 @@ class Skillshare(object):
 
         '''Subtitle download it takes same file path as .mp4 cause it auto replace the extension'''
         if boolSubtitle:
-            self.subtitleDownload(meta_res, fpath, tPath)
+            self.subtitleDownload(meta_res, fpath, tPath, all_subs)
